@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WP Craft — Helpdesk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wp-base':    '#0a0a0a',
+            'wp-surface': '#141414',
+            'wp-panel':   '#1c1c1c',
+            'wp-border':  '#272727',
+            'wp-muted':   '#3d3d3d',
+            'wp-text':    '#d4d4d4',
+            'wp-subtle':  '#6b6b6b',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    input:-webkit-autofill,
+    input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #1c1c1c inset;
+      -webkit-text-fill-color: #d4d4d4;
+      caret-color: #d4d4d4;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-wp-base flex items-center justify-center font-sans antialiased">
+
+  <div class="w-full max-w-sm px-6">
+
+    <!-- Brand -->
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center gap-2.5 mb-6">
+        <div class="w-8 h-8 rounded-lg border border-wp-border bg-wp-panel flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.5" class="w-4 h-4 text-wp-subtle">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+        </div>
+        <span class="text-wp-subtle text-xs font-medium tracking-[0.2em] uppercase">WP Craft</span>
+      </div>
+      <h1 class="text-wp-text text-2xl font-light tracking-tight">Portal de Atendimento</h1>
+      <p class="text-wp-subtle text-xs mt-2 tracking-wide">Acesso restrito à equipe autorizada</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-wp-surface border border-wp-border rounded-2xl p-8">
+      <form id="loginForm" class="space-y-5" novalidate>
+
+        <div class="space-y-1.5">
+          <label class="block text-wp-subtle text-[10px] font-semibold uppercase tracking-[0.15em]">E-mail</label>
+          <input id="email" type="email" required autocomplete="email"
+            class="w-full bg-wp-panel border border-wp-border rounded-xl px-4 py-3 text-wp-text text-sm
+                   placeholder-wp-muted focus:outline-none focus:border-wp-subtle transition-colors duration-150"
+            placeholder="seu@email.com" />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-wp-subtle text-[10px] font-semibold uppercase tracking-[0.15em]">Senha</label>
+          <input id="senha" type="password" required autocomplete="current-password"
+            class="w-full bg-wp-panel border border-wp-border rounded-xl px-4 py-3 text-wp-text text-sm
+                   placeholder-wp-muted focus:outline-none focus:border-wp-subtle transition-colors duration-150"
+            placeholder="••••••••" />
+        </div>
+
+        <div id="errorMsg"
+          class="hidden text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded-xl px-4 py-3">
+        </div>
+
+        <button type="submit"
+          class="w-full bg-wp-panel hover:bg-wp-border border border-wp-border rounded-xl py-3 mt-1
+                 text-wp-text text-sm font-medium tracking-wide transition-all duration-150
+                 flex items-center justify-center gap-2 disabled:opacity-40">
+          <span id="btnText">Entrar</span>
+          <svg id="spinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg"
+            fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        </button>
+
+      </form>
+    </div>
+
+    <p class="text-center text-wp-muted text-[11px] mt-8">
+      WP Craft &copy; 2025 &mdash; Todos os direitos reservados
+    </p>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8001'
+
+    if (localStorage.getItem('token')) {
+      window.location.replace('/painel.html')
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const email    = document.getElementById('email').value.trim()
+      const senha    = document.getElementById('senha').value
+      const errorMsg = document.getElementById('errorMsg')
+      const spinner  = document.getElementById('spinner')
+      const btnText  = document.getElementById('btnText')
+      const btn      = e.submitter
+
+      errorMsg.classList.add('hidden')
+      spinner.classList.remove('hidden')
+      btnText.textContent = 'Aguarde...'
+      btn.disabled = true
+
+      try {
+        const form = new FormData()
+        form.append('username', email)
+        form.append('password', senha)
+
+        const res  = await fetch(`${API}/api/auth/login`, { method: 'POST', body: form })
+        const data = await res.json()
+
+        if (!res.ok) throw new Error(data.detail || 'Erro ao autenticar')
+
+        localStorage.setItem('token',   data.access_token)
+        localStorage.setItem('usuario', JSON.stringify(data.usuario))
+        window.location.replace('/painel.html')
+      } catch (err) {
+        errorMsg.textContent = err.message
+        errorMsg.classList.remove('hidden')
+      } finally {
+        spinner.classList.add('hidden')
+        btnText.textContent = 'Entrar'
+        btn.disabled = false
+      }
+    })
+  </script>
+</body>
+</html>

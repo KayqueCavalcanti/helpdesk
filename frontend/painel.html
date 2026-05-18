@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel — WP Craft Helpdesk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'wp-base':    '#0a0a0a',
+            'wp-surface': '#141414',
+            'wp-panel':   '#1c1c1c',
+            'wp-border':  '#272727',
+            'wp-muted':   '#3d3d3d',
+            'wp-text':    '#d4d4d4',
+            'wp-subtle':  '#6b6b6b',
+          },
+        },
+      },
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-wp-base text-wp-text font-sans antialiased">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-wp-surface/90 backdrop-blur-md border-b border-wp-border">
+    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-md border border-wp-border bg-wp-panel flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-3.5 h-3.5 text-wp-subtle">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+        </div>
+        <span class="text-wp-subtle text-xs tracking-[0.15em] uppercase font-medium">WP Craft</span>
+        <span class="text-wp-border text-sm select-none">/</span>
+        <span class="text-wp-text text-sm">Helpdesk</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="userName" class="text-wp-subtle text-xs"></span>
+        <span id="adminBadge" class="hidden text-[10px] font-semibold uppercase tracking-widest bg-wp-panel border border-wp-border text-wp-subtle rounded-md px-2 py-0.5">Admin</span>
+        <button onclick="logout()" class="text-wp-subtle hover:text-wp-text text-xs transition-colors">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-wp-surface border border-wp-border rounded-2xl p-5">
+        <p class="text-wp-subtle text-[10px] uppercase tracking-[0.15em] font-semibold mb-3">Total</p>
+        <p id="statTotal" class="text-4xl font-extralight tabular-nums">—</p>
+      </div>
+      <div class="bg-wp-surface border border-wp-border rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+          <p class="text-wp-subtle text-[10px] uppercase tracking-[0.15em] font-semibold">Em andamento</p>
+        </div>
+        <p id="statAndamento" class="text-4xl font-extralight tabular-nums">—</p>
+      </div>
+      <div class="bg-wp-surface border border-wp-border rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+          <p class="text-wp-subtle text-[10px] uppercase tracking-[0.15em] font-semibold">Resolvidos</p>
+        </div>
+        <p id="statResolvido" class="text-4xl font-extralight tabular-nums">—</p>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="flex items-center gap-3 mb-5 flex-wrap">
+      <div class="relative flex-1 min-w-48">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-wp-subtle pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+        </svg>
+        <input id="searchInput" type="text" placeholder="Buscar chamados..."
+          oninput="onSearch()"
+          class="w-full bg-wp-surface border border-wp-border rounded-xl pl-9 pr-4 py-2.5 text-wp-text text-xs placeholder-wp-subtle focus:outline-none focus:border-wp-muted transition-colors" />
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="setFilter(null)" data-filter="all"
+          class="filter-btn px-3 py-2 rounded-xl text-xs border border-wp-border bg-wp-panel text-wp-subtle hover:text-wp-text transition-all">
+          Todos
+        </button>
+        <button onclick="setFilter('Aberto')" data-filter="Aberto"
+          class="filter-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border border-wp-border bg-wp-panel text-wp-subtle hover:text-wp-text transition-all">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Aberto
+        </button>
+        <button onclick="setFilter('Em Andamento')" data-filter="Em Andamento"
+          class="filter-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border border-wp-border bg-wp-panel text-wp-subtle hover:text-wp-text transition-all">
+          <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Andamento
+        </button>
+        <button onclick="setFilter('Resolvido')" data-filter="Resolvido"
+          class="filter-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs border border-wp-border bg-wp-panel text-wp-subtle hover:text-wp-text transition-all">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Resolvido
+        </button>
+      </div>
+      <button onclick="openNewModal()"
+        class="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs border border-wp-border bg-wp-panel text-wp-subtle hover:text-wp-text hover:bg-wp-border transition-all">
+        + Novo chamado
+      </button>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="flex gap-5">
+
+      <!-- Chamado List -->
+      <div class="flex-1 bg-wp-surface border border-wp-border rounded-2xl overflow-hidden min-w-0">
+        <div class="px-6 py-4 border-b border-wp-border">
+          <h2 class="text-sm font-medium">Chamados</h2>
+        </div>
+        <div id="chamadosList"></div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div id="detailPanel" class="hidden w-96 flex-shrink-0 bg-wp-surface border border-wp-border rounded-2xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-wp-border flex items-center justify-between">
+          <h2 class="text-sm font-medium">Detalhes</h2>
+          <button onclick="closeDetail()" class="text-wp-subtle hover:text-wp-text text-sm transition-colors">✕</button>
+        </div>
+        <div id="detailContent" class="p-5 overflow-y-auto" style="max-height: calc(100vh - 260px)"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- New Chamado Modal -->
+  <div id="newModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+    <div class="bg-wp-surface border border-wp-border rounded-2xl p-6 w-full max-w-md">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-sm font-medium">Novo chamado</h2>
+        <button onclick="closeNewModal()" class="text-wp-subtle hover:text-wp-text text-sm transition-colors">✕</button>
+      </div>
+      <form id="chamadoForm" class="space-y-4" novalidate>
+        <div class="space-y-1.5">
+          <label class="block text-wp-subtle text-[10px] uppercase tracking-[0.15em] font-semibold">Título</label>
+          <input id="titulo" type="text" required minlength="5"
+            class="w-full bg-wp-panel border border-wp-border rounded-xl px-4 py-3 text-wp-text text-sm placeholder-wp-muted focus:outline-none focus:border-wp-subtle transition-colors"
+            placeholder="Resumo do problema" />
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-wp-subtle text-[10px] uppercase tracking-[0.15em] font-semibold">Descrição</label>
+          <textarea id="descricao" required minlength="10" rows="4"
+            class="w-full bg-wp-panel border border-wp-border rounded-xl px-4 py-3 text-wp-text text-sm placeholder-wp-muted focus:outline-none focus:border-wp-subtle transition-colors resize-none"
+            placeholder="Descreva o problema com detalhes..."></textarea>
+        </div>
+        <div id="formError" class="hidden text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded-xl px-4 py-3"></div>
+        <button type="submit"
+          class="w-full bg-wp-panel hover:bg-wp-border border border-wp-border rounded-xl py-3 text-wp-text text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+          <span id="formBtnText">Abrir chamado</span>
+          <svg id="formSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Status Modal (admin) -->
+  <div id="statusModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+    <div class="bg-wp-surface border border-wp-border rounded-2xl p-6 w-full max-w-xs">
+      <h3 class="text-sm font-medium mb-1">Alterar status</h3>
+      <p id="modalChamadoTitle" class="text-wp-subtle text-xs mb-5 line-clamp-1"></p>
+      <div id="statusOptions" class="space-y-2"></div>
+      <button onclick="closeStatusModal()" class="mt-4 w-full text-wp-subtle hover:text-wp-text text-xs py-2 transition-colors">Cancelar</button>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:8001'
+
+    const STATUS = {
+      'Aberto':       { dot: 'bg-red-500',    label: 'Aberto'       },
+      'Em Andamento': { dot: 'bg-yellow-500', label: 'Em Andamento' },
+      'Resolvido':    { dot: 'bg-green-500',  label: 'Resolvido'    },
+    }
+
+    let currentUser     = null
+    let chamados        = []
+    let selectedId      = null
+    let activeFilter    = null
+    let searchQuery     = ''
+    let searchTimeout   = null
+
+    // ── Bootstrap ──────────────────────────────────────────────────
+    async function init() {
+      if (!localStorage.getItem('token')) { window.location.replace('/index.html'); return }
+      currentUser = JSON.parse(localStorage.getItem('usuario') || 'null')
+      if (currentUser) {
+        document.getElementById('userName').textContent = currentUser.nome
+        if (currentUser.is_admin) document.getElementById('adminBadge').classList.remove('hidden')
+      }
+      setFilter(null)
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────
+    function headers() {
+      return { 'Authorization': `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'application/json' }
+    }
+    function logout() { localStorage.clear(); window.location.replace('/index.html') }
+    function escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    }
+
+    // ── Data ────────────────────────────────────────────────────────
+    async function loadChamados() {
+      const params = new URLSearchParams()
+      if (activeFilter) params.set('status', activeFilter)
+      if (searchQuery.trim()) params.set('q', searchQuery.trim())
+      const qs = params.toString()
+      try {
+        const res = await fetch(`${API}/api/chamados/${qs ? '?' + qs : ''}`, { headers: headers() })
+        if (res.status === 401) { logout(); return }
+        chamados = await res.json()
+        renderList()
+        renderStats()
+      } catch {
+        document.getElementById('chamadosList').innerHTML =
+          '<div class="px-6 py-10 text-center text-red-400/70 text-sm">Falha ao carregar chamados</div>'
+      }
+    }
+
+    // ── Filters ─────────────────────────────────────────────────────
+    function setFilter(status) {
+      activeFilter = status
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        const active = btn.dataset.filter === (status ?? 'all')
+        btn.classList.toggle('text-wp-text', active)
+        btn.classList.toggle('border-wp-muted', active)
+        btn.classList.toggle('text-wp-subtle', !active)
+        btn.classList.toggle('border-wp-border', !active)
+      })
+      loadChamados()
+    }
+
+    function onSearch() {
+      clearTimeout(searchTimeout)
+      searchQuery = document.getElementById('searchInput').value
+      searchTimeout = setTimeout(loadChamados, 300)
+    }
+
+    // ── Render List ─────────────────────────────────────────────────
+    function renderList() {
+      const el = document.getElementById('chamadosList')
+      if (!chamados.length) {
+        el.innerHTML = '<div class="px-6 py-12 text-center text-wp-subtle text-sm">Nenhum chamado encontrado</div>'
+        return
+      }
+      el.innerHTML = chamados.map(c => {
+        const cfg  = STATUS[c.status]
+        const date = new Date(c.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        const isSelected = c.id === selectedId
+        return `
+          <div id="row-${c.id}" onclick="selectChamado(${c.id})"
+            class="chamado-row group px-6 py-4 flex items-start gap-4 border-b border-wp-border last:border-0
+                   cursor-pointer transition-colors duration-100 ${isSelected ? 'bg-wp-panel/70' : 'hover:bg-wp-panel/40'}">
+            <div class="mt-[7px] w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}"></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-wp-text text-sm font-medium truncate">${escHtml(c.titulo)}</p>
+              <p class="text-wp-subtle text-xs mt-0.5 truncate">${escHtml(c.descricao)}</p>
+              ${currentUser?.is_admin ? `<p class="text-wp-muted text-[11px] mt-1">${escHtml(c.autor.nome)}</p>` : ''}
+            </div>
+            <span class="text-wp-subtle text-[11px] flex-shrink-0 pt-0.5 tabular-nums">${date}</span>
+          </div>`
+      }).join('')
+    }
+
+    function renderStats() {
+      document.getElementById('statTotal').textContent     = chamados.length
+      document.getElementById('statAndamento').textContent = chamados.filter(c => c.status === 'Em Andamento').length
+      document.getElementById('statResolvido').textContent = chamados.filter(c => c.status === 'Resolvido').length
+    }
+
+    // ── Detail Panel ────────────────────────────────────────────────
+    async function selectChamado(id) {
+      selectedId = id
+      document.querySelectorAll('.chamado-row').forEach(r => {
+        const sel = r.id === `row-${id}`
+        r.classList.toggle('bg-wp-panel/70', sel)
+        r.classList.toggle('hover:bg-wp-panel/40', !sel)
+      })
+      document.getElementById('detailPanel').classList.remove('hidden')
+      document.getElementById('detailContent').innerHTML =
+        '<div class="py-10 text-center text-wp-subtle text-xs">Carregando...</div>'
+      try {
+        const res = await fetch(`${API}/api/chamados/${id}`, { headers: headers() })
+        const chamado = await res.json()
+        renderDetail(chamado)
+      } catch { closeDetail() }
+    }
+
+    function closeDetail() {
+      selectedId = null
+      document.getElementById('detailPanel').classList.add('hidden')
+      document.querySelectorAll('.chamado-row').forEach(r => {
+        r.classList.remove('bg-wp-panel/70')
+        r.classList.add('hover:bg-wp-panel/40')
+      })
+    }
+
+    function renderDetail(chamado) {
+      const cfg  = STATUS[chamado.status]
+      const date = new Date(chamado.criado_em).toLocaleString('pt-BR', {
+        day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+      const comments = chamado.comentarios ?? []
+      document.getElementById('detailContent').innerHTML = `
+        <div class="space-y-5">
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}"></div>
+              <span class="text-[10px] text-wp-subtle uppercase tracking-widest">${cfg.label}</span>
+              ${currentUser?.is_admin ? `
+                <button onclick="openStatusModal(${chamado.id})"
+                  class="ml-auto text-[10px] text-wp-subtle hover:text-wp-text border border-wp-border hover:border-wp-muted
+                         rounded-md px-2 py-0.5 transition-all">
+                  Alterar status
+                </button>` : ''}
+            </div>
+            <h3 class="text-wp-text font-medium text-sm leading-snug">${escHtml(chamado.titulo)}</h3>
+            <p class="text-wp-subtle text-xs mt-2 leading-relaxed">${escHtml(chamado.descricao)}</p>
+          </div>
+
+          <div class="text-[11px] text-wp-subtle space-y-1 border-t border-wp-border pt-4">
+            <div>Por <span class="text-wp-text">${escHtml(chamado.autor.nome)}</span></div>
+            <div>${date}</div>
+          </div>
+
+          <div class="border-t border-wp-border pt-4">
+            <p class="text-[10px] text-wp-subtle uppercase tracking-widest font-semibold mb-3">
+              Comentários <span class="text-wp-muted">(${comments.length})</span>
+            </p>
+
+            <div class="space-y-2.5 mb-4">
+              ${comments.length === 0
+                ? '<p class="text-wp-subtle text-xs text-center py-4">Nenhum comentário ainda</p>'
+                : comments.map(c => {
+                    const cDate = new Date(c.criado_em).toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+                    return `
+                      <div class="bg-wp-panel border border-wp-border rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="text-wp-text text-xs font-medium">${escHtml(c.autor.nome)}</span>
+                          <span class="text-wp-subtle text-[11px] tabular-nums">${cDate}</span>
+                        </div>
+                        <p class="text-wp-subtle text-xs leading-relaxed">${escHtml(c.conteudo)}</p>
+                      </div>`
+                  }).join('')}
+            </div>
+
+            <form onsubmit="submitComentario(event, ${chamado.id})" class="space-y-2">
+              <textarea id="comentarioInput" rows="3" placeholder="Adicionar um comentário..."
+                class="w-full bg-wp-panel border border-wp-border rounded-xl px-3 py-2.5 text-wp-text text-xs
+                       placeholder-wp-subtle focus:outline-none focus:border-wp-muted transition-colors resize-none"></textarea>
+              <button type="submit"
+                class="w-full bg-wp-panel hover:bg-wp-border border border-wp-border rounded-xl py-2.5
+                       text-wp-subtle hover:text-wp-text text-xs transition-all">
+                Enviar comentário
+              </button>
+            </form>
+          </div>
+        </div>`
+    }
+
+    async function submitComentario(e, chamadoId) {
+      e.preventDefault()
+      const input   = document.getElementById('comentarioInput')
+      const conteudo = input.value.trim()
+      if (!conteudo) return
+      try {
+        const res = await fetch(`${API}/api/chamados/${chamadoId}/comentarios`, {
+          method: 'POST', headers: headers(), body: JSON.stringify({ conteudo }),
+        })
+        if (!res.ok) throw new Error()
+        const res2  = await fetch(`${API}/api/chamados/${chamadoId}`, { headers: headers() })
+        const chamado = await res2.json()
+        renderDetail(chamado)
+        await loadChamados()
+      } catch { alert('Erro ao enviar comentário') }
+    }
+
+    // ── New Chamado Modal ────────────────────────────────────────────
+    function openNewModal() { document.getElementById('newModal').classList.remove('hidden') }
+    function closeNewModal() {
+      document.getElementById('newModal').classList.add('hidden')
+      document.getElementById('chamadoForm').reset()
+      document.getElementById('formError').classList.add('hidden')
+    }
+
+    document.getElementById('chamadoForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const titulo    = document.getElementById('titulo').value.trim()
+      const descricao = document.getElementById('descricao').value.trim()
+      const formError = document.getElementById('formError')
+      const spinner   = document.getElementById('formSpinner')
+      const btnText   = document.getElementById('formBtnText')
+      const btn       = e.submitter
+      formError.classList.add('hidden')
+      spinner.classList.remove('hidden')
+      btnText.textContent = 'Enviando...'
+      btn.disabled = true
+      try {
+        const res  = await fetch(`${API}/api/chamados/`, { method: 'POST', headers: headers(), body: JSON.stringify({ titulo, descricao }) })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.detail || 'Erro ao criar chamado')
+        closeNewModal()
+        await loadChamados()
+      } catch (err) {
+        formError.textContent = err.message
+        formError.classList.remove('hidden')
+      } finally {
+        spinner.classList.add('hidden')
+        btnText.textContent = 'Abrir chamado'
+        btn.disabled = false
+      }
+    })
+
+    // ── Status Modal ─────────────────────────────────────────────────
+    function openStatusModal(id) {
+      const chamado = chamados.find(c => c.id === id)
+      document.getElementById('modalChamadoTitle').textContent = chamado?.titulo ?? ''
+      document.getElementById('statusOptions').innerHTML = Object.entries(STATUS).map(([key, cfg]) => `
+        <button onclick="updateStatus(${id}, '${key}')"
+          class="w-full flex items-center gap-3 bg-wp-panel hover:bg-wp-border border border-wp-border
+                 rounded-xl px-4 py-3 transition-all text-left">
+          <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}"></div>
+          <span class="text-wp-text text-sm">${cfg.label}</span>
+        </button>`).join('')
+      document.getElementById('statusModal').classList.remove('hidden')
+    }
+
+    function closeStatusModal() { document.getElementById('statusModal').classList.add('hidden') }
+
+    async function updateStatus(id, status) {
+      try {
+        const res = await fetch(`${API}/api/chamados/${id}/status`, {
+          method: 'PATCH', headers: headers(), body: JSON.stringify({ status }),
+        })
+        if (!res.ok) throw new Error()
+        closeStatusModal()
+        await loadChamados()
+        if (selectedId === id) await selectChamado(id)
+      } catch { alert('Erro ao atualizar status') }
+    }
+
+    // Close modals on backdrop click
+    document.getElementById('newModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeNewModal() })
+    document.getElementById('statusModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeStatusModal() })
+
+    init()
+  </script>
+</body>
+</html>
