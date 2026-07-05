@@ -9,3 +9,5 @@ SECRET_KEY: str = os.getenv("SECRET_KEY", "TROQUE_EM_PRODUCAO_USE_openssl_rand_h
 ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_HOURS: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./helpdesk.db")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
