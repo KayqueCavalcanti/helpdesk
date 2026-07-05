@@ -9,7 +9,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
-        value: "HS256"
+        value: HS256
       - key: ACCESS_TOKEN_EXPIRE_HOURS
         value: "24"
       - key: DATABASE_URL
