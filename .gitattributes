@@ -1,0 +1,11 @@
+# ============================================================
+# Linguist overrides — faz o GitHub refletir o backend como
+# linguagem principal, ignorando o frontend na estatística.
+# Docs: https://github.com/github-linguist/linguist/blob/master/docs/overrides.md
+# ============================================================
+
+# Não conta a pasta de frontend no cálculo de linguagens
+frontend/**   linguist-vendored
+
+# Ignora dependências e artefatos de build
+.venv/**      linguist-vendored
